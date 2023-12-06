@@ -4,16 +4,16 @@ use std::thread::current;
 
 #[derive(Clone, Copy)]
 struct Colors {
-    red: u32,
-    green: u32,
-    blue: u32,
+    red: isize,
+    green: isize,
+    blue: isize,
 }
 struct Game {
     id: usize,
     color_tables: Vec<Colors>,
 }
 
-fn assign_colors_to_table(mut color_table:Colors, number: u32, color: &str) -> Colors {
+fn assign_colors_to_table(mut color_table:Colors, number: isize, color: &str) -> Colors {
     match color {
         "red"=>color_table.red = number,
         "green"=>color_table.green = number,
@@ -37,7 +37,7 @@ fn process_color_list(color_list: Vec<&str>) -> Colors {
         let space_index: usize = color.find(' ').unwrap_or(0);
         let ascii_number: &str = &color[..space_index];
         let color: &str = &color[space_index+1..];
-        match ascii_number.parse::<u32>() {
+        match ascii_number.parse::<isize>() {
             Ok(number) => {
                 println!("Number: {}, Color: {}", number, String::from(color));
                 color_table = assign_colors_to_table(color_table, number, color);
@@ -113,6 +113,39 @@ fn process_games(games: Vec<Game>, bag: Colors) -> usize {
     sum
 }
 
+fn get_bag_minimum(game: Game) -> Colors {
+    let mut min_bag = Colors {
+        red: 1,
+        green: 1,
+        blue : 1,
+    };
+
+    let mut initialized: bool = false;
+
+    for color_table in game.color_tables {
+        if (!initialized) {
+            min_bag = color_table;
+            initialized = true;
+        }
+        if (color_table.red > min_bag.red) {min_bag.red = color_table.red;}
+        if (color_table.green > min_bag.green) {min_bag.green = color_table.green;}
+        if (color_table.blue > min_bag.blue) {min_bag.blue = color_table.blue;}
+    }
+
+    min_bag
+}
+
+fn get_power(games: Vec<Game>) -> isize {
+    let mut final_power:isize = 1;
+
+    for game in games {
+        let game_min_bag: Colors = get_bag_minimum(game);
+        final_power += game_min_bag.red * game_min_bag.green * game_min_bag.blue
+    }
+
+    final_power
+}
+
 fn main() {
     const FILE: &str = "./in.txt";
     let content: String = fs::read_to_string(FILE).
@@ -126,8 +159,15 @@ fn main() {
         blue: 14,
     };
 
-    let finalSum: usize = process_games(process_input_file(content), bag);
-    println!("Final sum is: {}", finalSum);
+    let games: Vec<Game> = process_input_file(content);
+    let final_sum: usize = process_games(games, bag);
+    println!("Final sum is: {}", final_sum);
+
+    let content: String = fs::read_to_string(FILE).
+        expect("Input file couldn't be opened");
+    let games: Vec<Game> = process_input_file(content);
+    let final_power: isize = get_power(games);
+    println!("Final power is: {}", final_power - 1);
 
 }
 
